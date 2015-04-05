@@ -1,0 +1,50 @@
+footer {
+	margin: 50px auto;
+	text-align: center;
+	background: #fafafa;
+	border-top: 1px solid #eee;
+	padding: 20px;
+}
+
+.form-inline label {
+
+}
+input[type=number].form-control {
+    width: 75px;
+}
+
+.item {
+    border: 1px solid #eee;
+    background: #eee161;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+#itemsPreview .item:hover {
+    cursor: pointer;
+    background: indianred;
+}
+
+#itemsPreview {
+    margin-top: 10px;
+    overflow-x: scroll;
+    white-space: nowrap;
+}
+
+.orSeparator {
+    text-align: center;
+    font-size: 150%;
+    font-weight: bold;
+}
+
+#solution {
+    margin-top: 20px;
+}
+.bin {
+    border: 1px solid grey;
+    position: relative;
+    display: inline-block;
+}
+.bin .item {
+    position: absolute;
+}
