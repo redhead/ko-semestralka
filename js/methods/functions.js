@@ -9,10 +9,31 @@ function range(from, to) {
     });
 }
 
+function toInt(num) {
+    num = num + "";
+    return parseInt(num);
+}
+
+
+function orderItems(items) {
+    var sortItems = items.slice(0); // clone array
+
+    sortItems.sort(function(i1, i2) {
+        var delta = i2.height - i1.height;
+        if (delta != 0) {
+            return delta;
+        } else {
+            return i2.width - i1.width;
+        }
+    });
+
+    return sortItems;
+}
+
 
 function log(obj) {
     if (console) {
-        console.log;
+        console.log(obj);
     }
 }
 

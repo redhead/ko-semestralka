@@ -3,7 +3,8 @@ items = [];
 SCALE = 5; // one unit = 20 pixels
 
 methods = [
-    {name: "Permuted", script: "permute.js"}
+    {name: "Permuted", script: "permute.js"},
+    {name: "Extreme Point based", script: "ep-based.js"}
 ];
 
 
@@ -36,9 +37,25 @@ function createBinCanvas(binWidth, binHeight) {
 }
 
 function renderSolution(context, items) {
-    for (i in items) {
+    for (var i in items) {
         renderItem(context, items[i]);
     }
+}
+
+function renderPoints(context, points) {
+    for (var i in points) {
+        renderPoint(context, points[i]);
+    }
+}
+
+function renderPoint(context, point) {
+    var x = point.x * SCALE;
+    var y = point.y * SCALE;
+
+    context.beginPath();
+    context.arc(x, y, 2, 0, 2 * Math.PI, true);
+    context.fillStyle = '#00aa00';
+    context.fill();
 }
 
 function renderItem(context, item) {
@@ -116,15 +133,20 @@ function run(e) {
     var binCanvas = createBinCanvas(binWidth, binHeight);
     var context = binCanvas[0].getContext('2d');
 
-    var renderItems = null;
+    var itemsToRender = null;
+    var pointsToRender = null;
 
     var commands = {
         renderItems: function(items, clear) {
-            renderItems = items;
+            itemsToRender = items;
             //if (clear) {
             //    context.clearRect(0, 0, binCanvas.width() * SCALE, binCanvas.height() * SCALE);
             //}
             //renderSolution(context, items);
+        },
+
+        renderPoints: function(points) {
+            pointsToRender = points;
         },
 
         log: log,
@@ -139,10 +161,15 @@ function run(e) {
     };
 
     var render = function() {
-        if (renderItems) {
+        if (itemsToRender) {
             context.clearRect(0, 0, binCanvas.width() * SCALE, binCanvas.height() * SCALE);
-            renderSolution(context, renderItems);
-            renderItems = null;
+            renderSolution(context, itemsToRender);
+            itemsToRender = null;
+
+            if (pointsToRender) {
+                renderPoints(context, pointsToRender);
+                pointsToRender = null;
+            }
         }
         setTimeout(render, 1);
     };
