@@ -1,10 +1,19 @@
-items = [];
 
-SCALE = 5; // one unit = 20 pixels
+"use strict";
 
-methods = [
-    {name: "Permuted", script: "permute.js"},
-    {name: "Extreme Point based", script: "ep-based.js"}
+var items = [
+    {width: 6, height: 8},
+    {width: 9, height: 5},
+    {width: 6, height: 5},
+    //{width: 2, height: 3}
+    {width: 3, height: 3}
+];
+
+var SCALE = 5; // one unit = 20 pixels
+
+var methods = [
+    {name: "Extreme Point based", script: "ep-based.js"},
+    {name: "Permuted", script: "permute.js"}
 ];
 
 
@@ -42,9 +51,12 @@ function renderSolution(context, items) {
     }
 }
 
-function renderPoints(context, points) {
+function renderPoints(context, points, spaces) {
     for (var i in points) {
         renderPoint(context, points[i]);
+    }
+    for (var i in spaces) {
+        renderSpace(context, spaces[i]);
     }
 }
 
@@ -55,6 +67,18 @@ function renderPoint(context, point) {
     context.beginPath();
     context.arc(x, y, 2, 0, 2 * Math.PI, true);
     context.fillStyle = '#00aa00';
+    context.fill();
+}
+
+function renderSpace(context, space) {
+    var x = space.x * SCALE;
+    var y = space.y * SCALE;
+    var w = space.w * SCALE;
+    var h = space.h * SCALE;
+
+    context.beginPath();
+    context.rect(x, y, w, h);
+    context.fillStyle = "rgba(0, 0, 255, 0.1)";
     context.fill();
 }
 
@@ -135,18 +159,22 @@ function run(e) {
 
     var itemsToRender = null;
     var pointsToRender = null;
+    var spacesToRender = null;
 
     var commands = {
         renderItems: function(items, clear) {
             itemsToRender = items;
+            setTimeout(render, 1);
             //if (clear) {
             //    context.clearRect(0, 0, binCanvas.width() * SCALE, binCanvas.height() * SCALE);
             //}
             //renderSolution(context, items);
         },
 
-        renderPoints: function(points) {
+        renderPoints: function(points, spaces) {
             pointsToRender = points;
+            spacesToRender = spaces;
+            setTimeout(render, 1);
         },
 
         log: log,
@@ -165,11 +193,10 @@ function run(e) {
             context.clearRect(0, 0, binCanvas.width() * SCALE, binCanvas.height() * SCALE);
             renderSolution(context, itemsToRender);
             itemsToRender = null;
-
-            if (pointsToRender) {
-                renderPoints(context, pointsToRender);
-                pointsToRender = null;
-            }
+        }
+        if (pointsToRender) {
+            renderPoints(context, pointsToRender, spacesToRender);
+            pointsToRender = null;
         }
         setTimeout(render, 1);
     };
@@ -236,6 +263,7 @@ $(function () {
 
     initMethodsSelect();
 
-    randomize();
+    //randomize();
+    renderUI();
 
 });

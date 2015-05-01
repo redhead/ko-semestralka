@@ -1,4 +1,6 @@
 
+"use strict";
+
 importScripts('functions.js');
 
 
@@ -204,13 +206,14 @@ var TreeAlgState = function(binWidth, binHeight, items) {
             var msg = yield list[low];
             if (msg == 'skip') {
                 yield -1;
-            } else {
-                var next;
-                var send;
-                var p = permute(list, low + 1);
-                while ((next = p.next(send)).done == false) {
-                    send = yield next.value;
-                }
+                return;
+            }
+
+            var next;
+            var send;
+            var p = permute(list, low + 1);
+            while ((next = p.next(send)).done == false) {
+                send = yield next.value;
             }
 
             for (var i = low + 1; i < list.length; i++) {
