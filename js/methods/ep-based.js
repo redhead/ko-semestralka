@@ -194,7 +194,7 @@ var AlgState = function(binWidth, binHeight, items) {
                     delete newSPACE[_ep];
 
                     /*let*/var topEP = [_ep[0], itemTop];
-                    if (ep[0] <= _ep[0] && _ep[0] < itemRight && !newSPACE[topEP]) {
+                    if (ep[0] <= _ep[0] && _ep[0] < itemRight) {
                         if (_data.composite == true || _data.axis == 1) {
                             /*let*/var xCoords = _data.composite ? _data.yCoord : _data.coord;
                             var topCoords = [];
@@ -204,24 +204,20 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (topCoords.length > 0) {
-                                newEPs[topEP] = topEP;
-                                newSPACE[topEP] = {};
-                                for (/*let*/var space in _spaces) {
-                                    var newSpace = [_spaces[space][0], _spaces[space][1] - item.height];
-                                    if (newSpace[1] > 0) {
-                                        newSPACE[topEP][newSpace] = newSpace;
-                                    }
+                                if (!newEPs[topEP]) {
+                                    newEPs[topEP] = topEP;
+                                    newEPdata[topEP] = {
+                                        composite: false,
+                                        axis: 1,
+                                        coord: topCoords
+                                    };
                                 }
-                                newEPdata[topEP] = {
-                                    composite: false,
-                                    axis: 1,
-                                    coord: topCoords
-                                };
+                                maxYep[_ep[0]] =_ep[1];
                             }
                         }
                     }
                     /*let*/var rightEP = [itemRight, _ep[1]];
-                    if (ep[1] <= _ep[1] && _ep[1] < itemTop && !newSPACE[rightEP]) {
+                    if (ep[1] <= _ep[1] && _ep[1] < itemTop) {
                         if (_data.composite == true || _data.axis == 0) {
                             /*let*/var xCoords = _data.composite ? _data.xCoord : _data.coord;
                             var rightCoords = [];
@@ -231,19 +227,15 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (rightCoords.length > 0) {
-                                newEPs[rightEP] = rightEP;
-                                newSPACE[rightEP] = {};
-                                for (/*let*/var space in _spaces) {
-                                    var newSpace = [_spaces[space][0] - item.width, _spaces[space][1]];
-                                    if (newSpace[0] > 0) {
-                                        newSPACE[rightEP][newSpace] = newSpace;
-                                    }
+                                if (!newEPs[rightEP]) {
+                                    newEPs[rightEP] = rightEP;
+                                    newEPdata[rightEP] = {
+                                        composite: false,
+                                        axis: 0,
+                                        coord: rightCoords
+                                    };
                                 }
-                                newEPdata[rightEP] = {
-                                    composite: false,
-                                    axis: 0,
-                                    coord: rightCoords
-                                };
+                                maxXep[_ep[1]] =_ep[0];
                             }
                         }
                     }
