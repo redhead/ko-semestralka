@@ -98,8 +98,8 @@ var AlgState = function(binWidth, binHeight, items) {
                 }
             } else {
                 if (newEPdata[epY].composite == true || newEPdata[epY].axis == 0) {
-                    (newEPdata[epY].composite ? newEPdata[epY].yCoord : newEPdata[epY].coord).push(ep[0]);
-                    (newEPdata[epY].composite ? newEPdata[epY].yCoord : newEPdata[epY].coord).push(itemRight);
+                    (newEPdata[epY].composite ? newEPdata[epY].xCoord : newEPdata[epY].coord).push(ep[0]);
+                    (newEPdata[epY].composite ? newEPdata[epY].xCoord : newEPdata[epY].coord).push(itemRight);
                 } else {
                     newEPdata[epY] = {
                         composite: true,
@@ -118,7 +118,7 @@ var AlgState = function(binWidth, binHeight, items) {
             } else {
                 if (newEPdata[epX].composite == true || newEPdata[epX].axis == 1) {
                     (newEPdata[epX].composite ? newEPdata[epX].yCoord : newEPdata[epX].coord).push(ep[1]);
-                    (newEPdata[epX].composite ? newEPdata[epX].xCoord : newEPdata[epX].coord).push(itemTop);
+                    (newEPdata[epX].composite ? newEPdata[epX].yCoord : newEPdata[epX].coord).push(itemTop);
                 } else {
                     newEPdata[epX] = {
                         composite: true,
