@@ -6,7 +6,7 @@ importScripts('functions.js');
 
 var AlgState = function(binWidth, binHeight, items) {
 
-    items = orderItems(items);
+    //items = orderItems(items);
 
     var EP = {}, EPdata = {}, SPACE = {};
 
@@ -27,6 +27,8 @@ var AlgState = function(binWidth, binHeight, items) {
         var item = items[i];
 
         var bestEP = null;
+
+        console.log("placing item #" + (parseInt(i) + 1));
 
         for (var j in EP) {
             var ep = EP[j];
@@ -92,16 +94,17 @@ var AlgState = function(binWidth, binHeight, items) {
                 newEPdata[epY] = {
                     composite: false,
                     axis: 0,
-                    coord: [ep[0]]
+                    coord: [ep[0], itemRight]
                 }
             } else {
                 if (newEPdata[epY].composite == true || newEPdata[epY].axis == 0) {
                     (newEPdata[epY].composite ? newEPdata[epY].yCoord : newEPdata[epY].coord).push(ep[0]);
+                    (newEPdata[epY].composite ? newEPdata[epY].yCoord : newEPdata[epY].coord).push(itemRight);
                 } else {
                     newEPdata[epY] = {
                         composite: true,
                         yCoord: newEPdata[epY].coord,
-                        xCoord: [ep[0]]
+                        xCoord: [ep[0], itemRight]
                     };
                 }
             }
@@ -110,16 +113,17 @@ var AlgState = function(binWidth, binHeight, items) {
                 newEPdata[epX] = {
                     composite: false,
                     axis: 1,
-                    coord: [ep[1]]
+                    coord: [ep[1], itemTop]
                 }
             } else {
                 if (newEPdata[epX].composite == true || newEPdata[epX].axis == 1) {
-                    (newEPdata[epX].composite ? newEPdata[epX].xCoord : newEPdata[epX].coord).push(ep[1]);
+                    (newEPdata[epX].composite ? newEPdata[epX].yCoord : newEPdata[epX].coord).push(ep[1]);
+                    (newEPdata[epX].composite ? newEPdata[epX].xCoord : newEPdata[epX].coord).push(itemTop);
                 } else {
                     newEPdata[epX] = {
                         composite: true,
                         xCoord: newEPdata[epX].coord,
-                        yCoord: [ep[1]]
+                        yCoord: [ep[1], itemTop]
                     };
                 }
             }
@@ -192,10 +196,10 @@ var AlgState = function(binWidth, binHeight, items) {
                     /*let*/var topEP = [_ep[0], itemTop];
                     if (ep[0] <= _ep[0] && _ep[0] < itemRight && !newSPACE[topEP]) {
                         if (_data.composite == true || _data.axis == 1) {
-                            /*let*/var xCoords = _data.coord || _data.yCoord;
+                            /*let*/var xCoords = _data.composite ? _data.yCoord : _data.coord;
                             var topCoords = [];
                             for (/*let*/var coord in xCoords) {
-                                if (xCoords[coord] >= itemTop) {
+                                if (xCoords[coord] > itemTop) {
                                     topCoords.push(xCoords[coord]);
                                 }
                             }
@@ -219,10 +223,10 @@ var AlgState = function(binWidth, binHeight, items) {
                     /*let*/var rightEP = [itemRight, _ep[1]];
                     if (ep[1] <= _ep[1] && _ep[1] < itemTop && !newSPACE[rightEP]) {
                         if (_data.composite == true || _data.axis == 0) {
-                            /*let*/var xCoords = _data.coord || _data.xCoord;
+                            /*let*/var xCoords = _data.composite ? _data.xCoord : _data.coord;
                             var rightCoords = [];
                             for (/*let*/var coord in xCoords) {
-                                if (xCoords[coord] >= itemRight) {
+                                if (xCoords[coord] > itemRight) {
                                     rightCoords.push(xCoords[coord]);
                                 }
                             }
@@ -244,38 +248,36 @@ var AlgState = function(binWidth, binHeight, items) {
                         }
                     }
 
-                } else if (_ep[0] == itemRight && ep[1] <= _ep[1] && _ep[1] <= itemTop) {
-                    // on right edge
-                    newEPdata[_ep] = {
-                        composite: false,
-                        axis: 0,
-                        coord: _data.coord ? _data.coord.slice() : _data.xCoord.slice()
-                    };
-
-                } else if (_ep[1] == itemTop && ep[0] <= _ep[0] && _ep[0] <= itemRight) {
-                    // on top edge
-                    newEPdata[_ep] = {
-                        composite: false,
-                        axis: 1,
-                        coord: _data.coord ? _data.coord.slice() : _data.yCoord.slice()
-                    };
-
-                } else if (_ep[0] < ep[0] && ep[1] == itemTop && _ep[0] >= epY[0]) {
+                } else if (_ep[0] < ep[0] && _ep[1] == itemTop && _ep[0] > epY[0]) {
                     // left of item, top edge line
-                    /*let*/var newData = newEPdata[_ep];
-                    if (newData.composite) {
-                        newEPdata.xCoord.push(ep[0]);
+                    if (_data.composite) {
+                        newEPdata[_ep].xCoord.push(ep[0]);
+                        newEPdata[_ep].xCoord.push(itemRight);
+                    } else if (_data.axis == 0) {
+                        newEPdata[_ep].coord.push(ep[0]);
+                        newEPdata[_ep].coord.push(itemRight);
                     } else {
-                        newEPdata.coord.push(ep[0]);
+                        newEPdata[_ep] = {
+                            composite: true,
+                            xCoord: [ep[0], itemRight],
+                            yCoord: _data.coord
+                        }
                     }
 
-                } else if (_ep[1] < ep[1] && ep[0] == itemRight && _ep[1] >= epX[1]) {
+                } else if (_ep[1] < ep[1] && _ep[0] == itemRight && _ep[1] > epX[1]) {
                     // below item, right edge line
-                    /*let*/var newData = newEPdata[_ep];
-                    if (newData.composite) {
-                        newEPdata.yCoord.push(ep[1]);
+                    if (_data.composite) {
+                        newEPdata[_ep].yCoord.push(ep[1]);
+                        newEPdata[_ep].yCoord.push(itemTop);
+                    } else if (_data.axis == 1) {
+                        newEPdata[_ep].coord.push(ep[1]);
+                        newEPdata[_ep].coord.push(itemTop);
                     } else {
-                        newEPdata.coord.push(ep[1]);
+                        newEPdata[_ep] = {
+                            composite: true,
+                            xCoord: _data.coord,
+                            yCoord: [ep[1], itemTop]
+                        }
                     }
 
                 } else if (_ep[0] < itemRight && _ep[1] < itemTop) {
@@ -319,9 +321,17 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (newLeftCoordList.length == 0) {
-                                delete newEPdata[_ep];
-                                delete newEPs[_ep];
-                                delete newSPACE[_ep];
+                                if (newEPdata[_ep].composite) {
+                                    newEPdata[_ep] = {
+                                        composite: false,
+                                        axis: 1,
+                                        coord: newEPdata[_ep].yCoord
+                                    };
+                                } else {
+                                    delete newEPdata[_ep];
+                                    delete newEPs[_ep];
+                                    delete newSPACE[_ep];
+                                }
                             } else {
                                 if (newEPdata[_ep].composite) {
                                     newEPdata[_ep].xCoord = newLeftCoordList;
@@ -332,11 +342,19 @@ var AlgState = function(binWidth, binHeight, items) {
                             if (newRightCoordList.length != 0) {
                                 /*let*/var coord = [itemRight, _ep[1]];
 
-                                newEPdata[coord] = jQ.extend({}, newEPdata[_ep], {
-                                    composite: false,
-                                    coord: newRightCoordList,
-                                    axis: 0
-                                });
+                                if (newEPdata[coord] && (newEPdata[coord].composite == true || newEPdata[coord].axis == 1)) {
+                                    newEPdata[coord] = {
+                                        composite: true,
+                                        yCoord: newEPdata[coord].composite ? newEPdata[coord].yCoord : newEPdata[coord].coord,
+                                        xCoord: newRightCoordList
+                                    }
+                                } else {
+                                    newEPdata[coord] = {
+                                        composite: false,
+                                        coord: newRightCoordList,
+                                        axis: 0
+                                    };
+                                }
                                 if (!newEPs[coord]) {
                                     newEPs[coord] = coord;
                                 }
@@ -361,9 +379,17 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (newBellowCoordList.length == 0) {
-                                delete newEPdata[_ep];
-                                delete newEPs[_ep];
-                                delete newSPACE[_ep];
+                                if (newEPdata[_ep].composite) {
+                                    newEPdata[_ep] = {
+                                        composite: false,
+                                        axis: 0,
+                                        coord: newEPdata[_ep].xCoord
+                                    };
+                                } else {
+                                    delete newEPdata[_ep];
+                                    delete newEPs[_ep];
+                                    delete newSPACE[_ep];
+                                }
                             } else {
                                 if (newEPdata[_ep].composite) {
                                     newEPdata[_ep].yCoord = newBellowCoordList;
@@ -374,11 +400,19 @@ var AlgState = function(binWidth, binHeight, items) {
                             if (newAboveCoordList.length != 0) {
                                 /*let*/var coord = [_ep[0], itemTop];
 
-                                newEPdata[coord] = jQ.extend({}, newEPdata[_ep], {
-                                    composite: false,
-                                    coord: newAboveCoordList,
-                                    axis: 1
-                                });
+                                if (newEPdata[coord] && (newEPdata[coord].composite == true || newEPdata[coord].axis == 0)) {
+                                    newEPdata[coord] = {
+                                        composite: true,
+                                        yCoord: newAboveCoordList,
+                                        xCoord: newEPdata[coord].composite ? newEPdata[coord].xCoord : newEPdata[coord].coord
+                                    }
+                                } else {
+                                    newEPdata[coord] = {
+                                        composite: false,
+                                        coord: newAboveCoordList,
+                                        axis: 1
+                                    };
+                                }
                                 if (!newEPs[coord]) {
                                     newEPs[coord] = coord;
                                 }
@@ -397,10 +431,11 @@ var AlgState = function(binWidth, binHeight, items) {
                                 newEPdata[compEP] = {
                                     composite: true,
                                     yCoord: newEPdata[compEP].coord,
-                                    xCoord: [ep[0]]
+                                    xCoord: [ep[0], itemRight]
                                 };
                             } else {
                                 newEPdata[compEP].xCoord.push(ep[0]);
+                                newEPdata[compEP].xCoord.push(itemRight);
                             }
                         } else {
                             /*let*/var coordOriginList = _data.composite ? _data.yCoord : _data.coord;
@@ -415,7 +450,7 @@ var AlgState = function(binWidth, binHeight, items) {
                                 newEPdata[compEP] = {
                                     composite: true,
                                     yCoord: newCoordList,
-                                    xCoord: [ep[0]]
+                                    xCoord: [ep[0], itemRight]
                                 };
                                 // TODO update SPACE
                             }
@@ -429,11 +464,12 @@ var AlgState = function(binWidth, binHeight, items) {
                             } else if (newEPdata[compEP].composite == false) {
                                 newEPdata[compEP] = {
                                     composite: true,
-                                    yCoord: [ep[1]],
+                                    yCoord: [ep[1], itemTop],
                                     xCoord: newEPdata[compEP].coord
                                 };
                             } else {
                                 newEPdata[compEP].yCoord.push(ep[1]);
+                                newEPdata[compEP].yCoord.push(itemTop);
                             }
                         } else {
                             /*let*/var coordOriginList = _data.composite ? _data.xCoord : _data.coord;
@@ -447,7 +483,7 @@ var AlgState = function(binWidth, binHeight, items) {
                                 newEPs[compEP] = compEP;
                                 newEPdata[compEP] = {
                                     composite: true,
-                                    yCoord: [ep[1]],
+                                    yCoord: [ep[1], itemTop],
                                     xCoord: newCoordList
                                 };
                                 // TODO update SPACE
@@ -475,11 +511,19 @@ var AlgState = function(binWidth, binHeight, items) {
                 /*let*/var spaces = SPACE[[x, y]];
                 for (/*let*/var space in spaces) {
                     if (intersect([x, y], spaces[space], ep, itemSpaces)) {
-                        if (!newSPACE[[itemRight, y]]) {
-                            newSPACE[[itemRight, y]] = {};
-                        }
+                        /*let*/var ok = true;
                         /*let*/var newSpace = [spaces[space][0] - (itemRight - x), spaces[space][1]];
-                        newSPACE[[itemRight, y]][newSpace] = newSpace;
+                        /*let*/var spaceToUpdate = newSPACE[[itemRight, y]] = (newSPACE[[itemRight, y]] || {});
+                        for (/*let*/var space2 in spaceToUpdate) {
+                            if (newSpace[0] <= spaceToUpdate[space2][0] && newSpace[1] <= spaceToUpdate[space2][1]) {
+                                ok = false;
+                            } else if (newSpace[0] >= spaceToUpdate[space2][0] && newSpace[1] >= spaceToUpdate[1]) {
+                                delete spaceToUpdate[space2];
+                            }
+                        }
+                        if (ok) {
+                            spaceToUpdate[newSpace] = newSpace;
+                        }
                     }
                 }
             }
@@ -488,11 +532,19 @@ var AlgState = function(binWidth, binHeight, items) {
                 /*let*/var spaces = SPACE[[x, y]];
                 for (/*let*/var space in spaces) {
                     if (intersect([x, y], spaces[space], ep, itemSpaces)) {
-                        if (!newSPACE[[x, itemTop]]) {
-                            newSPACE[[x, itemTop]] = {};
-                        }
+                        /*let*/var ok = true;
                         /*let*/var newSpace = [spaces[space][0], spaces[space][1] - (itemTop - y)];
-                        newSPACE[[x, itemTop]][newSpace] = newSpace;
+                        /*let*/var spaceToUpdate = newSPACE[[x, itemTop]] = (newSPACE[[x, itemTop]] || {});
+                        for (/*let*/var space2 in spaceToUpdate) {
+                            if (newSpace[0] <= spaceToUpdate[space2][0] && newSpace[1] <= spaceToUpdate[space2][1]) {
+                                ok = false;
+                            } else if (newSpace[0] >= spaceToUpdate[space2][0] && newSpace[1] >= spaceToUpdate[1]) {
+                                delete spaceToUpdate[space2];
+                            }
+                        }
+                        if (ok) {
+                            spaceToUpdate[newSpace] = newSpace;
+                        }
                     }
                 }
             }
