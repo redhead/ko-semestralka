@@ -564,12 +564,28 @@ var AlgState = function(binWidth, binHeight, items) {
                 mergeSpaces(SPACE, newSPACE, compEP, ep1, ep2);
             }
 
-            for (var space in newSPACE) {
-                if (!newEPs[space]) {
-                    delete newSPACE[space];
+            var biggestEmptySpace = 0;
+
+            for (var _ep in newSPACE) {
+                if (!newEPs[_ep]) {
+                    delete newSPACE[_ep];
+                } else {
+                    for (var space in newSPACE[_ep]) {
+                        var size = newSPACE[_ep][space][0] * newSPACE[_ep][space][1];
+                        if (size > biggestEmptySpace) {
+                            biggestEmptySpace = size;
+                        }
+                    }
                 }
             }
 
+            var spaceRatio = biggestEmptySpace / (binWidth * binHeight);
+            var pointsRatio = objectSize(newEPs) / (2 * items.length);
+            if (pointsRatio > 1) {
+                pointsRatio = 0.9999999999;
+            }
+
+            var feasibility = spaceRatio * (1 - pointsRatio);
 
             //var _packed = packed.slice();
             //_packed.push({
@@ -581,13 +597,11 @@ var AlgState = function(binWidth, binHeight, items) {
             //renderItems(_packed);
             //renderExtremePoints(newEPs, newSPACE);
 
-            /*let*/var epCount = objectSize(newEPs);
-
-            if (bestEP == null || bestEP.idx > epCount) {
+            if (bestEP == null || feasibility > bestEP.feasibility) {
                 if (bestEP == null) {
                     bestEP = {};
                 }
-                bestEP.idx = epCount;
+                bestEP.feasibility = feasibility;
                 bestEP.placingEP = ep;
                 bestEP.EP = newEPs;
                 bestEP.EPdata = newEPdata;
@@ -610,9 +624,23 @@ var AlgState = function(binWidth, binHeight, items) {
         EPdata = bestEP.EPdata;
         SPACE = bestEP.SPACE;
 
-        renderItems(packed);
-        renderExtremePoints(EP, SPACE);
+        //renderItems(packed);
+        //renderExtremePoints(EP, SPACE);
     }
+
+
+    packed.push({
+        x: bestEP.placingEP[0],
+        y: bestEP.placingEP[1],
+        width: item.width,
+        height: item.height
+    });
+    EP = bestEP.EP;
+    EPdata = bestEP.EPdata;
+    SPACE = bestEP.SPACE;
+
+    renderItems(packed);
+
 
     function intersect(xy1, wh1, xy2, wh2) {
         var a_x1 = xy1[0];
