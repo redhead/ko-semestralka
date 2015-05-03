@@ -55,7 +55,7 @@ function renderPoints(context, points, spaces) {
     for (var i in points) {
         renderPoint(context, points[i]);
     }
-    for (var i in spaces) {
+    for (var i in points) {
         renderSpace(context, spaces[i]);
     }
 }

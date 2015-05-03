@@ -124,6 +124,11 @@ var jQ = {
 };
 
 
+var cachedPush = Array.prototype.push;
+
+function pushAll(array, elements) {
+    cachedPush.apply(array, elements);
+}
 
 
 // my tests

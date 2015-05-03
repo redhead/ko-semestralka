@@ -6,14 +6,14 @@ importScripts('functions.js');
 
 var AlgState = function(binWidth, binHeight, items) {
 
-    //items = orderItems(items);
+    items = orderItems(items);
 
     var EP = {}, EPdata = {}, SPACE = {};
 
     EP[[0, 0]] = [0, 0];
     EPdata[[0, 0]] = {
-        xCoord: [binWidth],
-        yCoord: [binHeight]
+        xCoord: [],
+        yCoord: []
     };
     SPACE[[0, 0]] = {};
     SPACE[[0,0]][[binWidth, binHeight]] = [binWidth, binHeight];
@@ -114,8 +114,16 @@ var AlgState = function(binWidth, binHeight, items) {
                 newSPACE[epX] = {};
             }
 
-            var maxXep = {}; // max X EP depending on Y
-            var maxYep = {}; // max Y EP depending on X
+            var maxXep = {}; // max X EP depending on Y, item level
+            var maxYep = {}; // max Y EP depending on X, item level
+
+            var maxXcomp = {}; // max X of "floating" EP made by epX
+            var rightEdgeY = {};
+            rightEdgeY[epX[1]] = epX[1];
+
+            var maxYcomp = {}; // max Y of "floating" EP made by epY
+            var topEdgeX = {};
+            topEdgeX[epY[0]] = epY[0];
 
             for (var l in EP) {
                 // skip the EP where we place an item
@@ -172,25 +180,41 @@ var AlgState = function(binWidth, binHeight, items) {
                     delete newEPdata[_ep];
                     delete newSPACE[_ep];
 
+                    if (_ep[0] == ep[0]) {
+                        maxYcomp[_ep[0]] = _ep[1];
+                    }
+                    if (_ep[1] == _ep[1]) {
+                        maxXcomp[_ep[1]] = _ep[0];
+                    }
+
                     /*let*/var topEP = [_ep[0], itemTop];
                     if (ep[0] <= _ep[0] && _ep[0] < itemRight) {
                         if (_data.yCoord.length > 0) {
                             /*let*/var yCoords = _data.yCoord;
-                            var topCoords = [];
+                            /*let*/var topCoords = [];
+                            /*let*/var hasAbove = false;
                             for (/*let*/var coord in yCoords) {
-                                if (yCoords[coord] > itemTop) {
+                                if (yCoords[coord] >= itemTop) {
                                     topCoords.push(yCoords[coord]);
                                 }
+                                if (yCoords[coord] > itemTop) {
+                                    hasAbove = true;
+                                }
                             }
-                            if (topCoords.length > 0) {
+                            if (topCoords.length > 0 && hasAbove) {
                                 if (!newEPs[topEP]) {
                                     newEPs[topEP] = topEP;
                                     newEPdata[topEP] = {
-                                        xCoord: [],
+                                        xCoord: [_ep[0], itemRight],
                                         yCoord: topCoords
                                     };
+                                } else {
+                                    newEPdata[topEP].yCoord = topCoords;
                                 }
-                                maxYep[_ep[0]] =_ep[1];
+                                newEPdata[topEP].yCoord.push(itemTop);
+                                if (!maxYep[_ep[0]] || maxYep[_ep[0]] < _ep[1]) {
+                                    maxYep[_ep[0]] =_ep[1];
+                                }
                             }
                         }
                     }
@@ -198,21 +222,30 @@ var AlgState = function(binWidth, binHeight, items) {
                     if (ep[1] <= _ep[1] && _ep[1] < itemTop) {
                         if (_data.xCoord.length > 0) {
                             /*let*/var xCoords = _data.xCoord;
-                            var rightCoords = [];
+                            /*let*/var rightCoords = [];
+                            /*let*/var hasRight = false;
                             for (/*let*/var coord in xCoords) {
-                                if (xCoords[coord] > itemRight) {
+                                if (xCoords[coord] >= itemRight) {
                                     rightCoords.push(xCoords[coord]);
                                 }
+                                if (xCoords[coord] > itemRight) {
+                                    hasRight = true;
+                                }
                             }
-                            if (rightCoords.length > 0) {
+                            if (rightCoords.length > 0 && hasRight) {
                                 if (!newEPs[rightEP]) {
                                     newEPs[rightEP] = rightEP;
-                                    newEPdata[topEP] = {
+                                    newEPdata[rightEP] = {
                                         xCoord: rightCoords,
-                                        yCoord: []
+                                        yCoord: [_ep[1], itemTop]
                                     };
+                                } else {
+                                    newEPdata[rightEP].xCoord = rightCoords;
                                 }
-                                maxXep[_ep[1]] =_ep[0];
+                                newEPdata[rightEP].xCoord.push(itemRight);
+                                if (!maxXep[_ep[1]] || maxXep[_ep[1]] < _ep[0]) {
+                                    maxXep[_ep[1]] =_ep[0];
+                                }
                             }
                         }
                     }
@@ -222,10 +255,14 @@ var AlgState = function(binWidth, binHeight, items) {
                     newEPdata[_ep].xCoord.push(ep[0]);
                     newEPdata[_ep].xCoord.push(itemRight);
 
+                    topEdgeX[_ep[0]] = _ep[0];
+
                 } else if (_ep[1] < ep[1] && _ep[0] == itemRight && _ep[1] > epX[1]) {
                     // below item, right edge line
                     newEPdata[_ep].yCoord.push(ep[1]);
                     newEPdata[_ep].yCoord.push(itemTop);
+
+                    rightEdgeY[_ep[1]] = _ep[1];
 
                 } else if (_ep[0] < itemRight && _ep[1] < itemTop) {
                     for (/*let*/var space in _spaces) {
@@ -259,12 +296,16 @@ var AlgState = function(binWidth, binHeight, items) {
                             /*let*/var coordOriginList = _data.xCoord;
                             /*let*/var newRightCoordList = [];
                             /*let*/var newLeftCoordList = [];
+                            var hasRight = false;
                             for (/*let*/var coord in coordOriginList) {
                                 /*let*/var originX = coordOriginList[coord];
                                 if (originX >= itemRight) {
                                     newRightCoordList.push(originX);
                                 } else {
                                     newLeftCoordList.push(originX);
+                                }
+                                if (originX > itemRight) {
+                                    hasRight = true;
                                 }
                             }
                             if (newLeftCoordList.length == 0 && newEPdata[_ep].yCoord.length == 0) {
@@ -274,11 +315,12 @@ var AlgState = function(binWidth, binHeight, items) {
                             } else {
                                 newEPdata[_ep].xCoord = newLeftCoordList;
                             }
-                            if (newRightCoordList.length != 0) {
+                            if (newRightCoordList.length != 0 && hasRight) {
                                 /*let*/var coord = [itemRight, _ep[1]];
 
                                 if (newEPdata[coord]) {
-                                    newEPdata[coord].xCoord.push(newRightCoordList);
+                                    // TODO predelat na Set
+                                    pushAll(newEPdata[coord].xCoord, newRightCoordList);
                                 } else {
                                     newEPdata[coord] = {
                                         xCoord: newRightCoordList,
@@ -294,18 +336,23 @@ var AlgState = function(binWidth, binHeight, items) {
                             }
                         }
 
-                    } else if (_ep[1] <= ep[1] && ep[0] <= _ep[0]) {
+                    }
+                    if (_ep[1] <= ep[1] && ep[0] <= _ep[0]) {
                         if (_data.yCoord.length > 0) {
                             // below item, origin above
                             /*let*/var coordOriginList = _data.yCoord;
                             /*let*/var newAboveCoordList = [];
                             /*let*/var newBellowCoordList = [];
+                            var hasAbove = false;
                             for (/*let*/var coord in coordOriginList) {
                                 /*let*/var originY = coordOriginList[coord];
                                 if (originY >= itemTop) {
                                     newAboveCoordList.push(originY);
                                 } else {
                                     newBellowCoordList.push(originY);
+                                }
+                                if (originY > itemTop) {
+                                    hasAbove = true;
                                 }
                             }
                             if (newBellowCoordList.length == 0 && newEPdata[_ep].xCoord.length == 0) {
@@ -315,11 +362,12 @@ var AlgState = function(binWidth, binHeight, items) {
                             } else {
                                 newEPdata[_ep].yCoord = newBellowCoordList;
                             }
-                            if (newAboveCoordList.length != 0) {
+                            if (newAboveCoordList.length != 0 && hasAbove) {
                                 /*let*/var coord = [_ep[0], itemTop];
 
                                 if (newEPdata[coord]) {
-                                    newEPdata[coord].yCoord.push(newAboveCoordList);
+                                    // TODO predelat na Set
+                                    pushAll(newEPdata[coord].yCoord, newAboveCoordList);
                                 } else {
                                     newEPdata[coord] = {
                                         xCoord: [],
@@ -335,12 +383,15 @@ var AlgState = function(binWidth, binHeight, items) {
                             }
                         }
                     }
-                    if (epY[0] < _ep[0] && _ep[0] <= ep[0] && _ep[1] < itemTop) {
+                    if (epY[0] <= _ep[0] && _ep[0] <= ep[0] && _ep[1] < itemTop) {
                         var compEP = [_ep[0], itemTop];
-                        if (newEPs[compEP]) {
+                        if (newEPs[compEP] && epY[0] != _ep[0]) {
                             newEPdata[compEP].xCoord.push(ep[0]);
                             newEPdata[compEP].xCoord.push(itemRight);
 
+                            if (!EP[compEP] && (!maxYcomp[_ep[0]] || maxYcomp[_ep[0]] < _ep[1])) {
+                                maxYcomp[_ep[0]] = _ep[1];
+                            }
                         } else {
                             /*let*/var coordOriginList = _data.yCoord;
                             /*let*/var newCoordList = [];
@@ -350,20 +401,30 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (newCoordList.length > 0) {
-                                newEPs[compEP] = compEP;
-                                newEPdata[compEP] = {
-                                    yCoord: newCoordList,
-                                    xCoord: [ep[0], itemRight]
-                                };
-                                // TODO update SPACE
+                                if (epY[0] == _ep[0]) {
+                                    newEPdata[compEP].yCoord = newCoordList;
+                                } else {
+                                    newEPs[compEP] = compEP;
+                                    newEPdata[compEP] = {
+                                        yCoord: newCoordList,
+                                        xCoord: [ep[0], itemRight]
+                                    };
+                                    if (!maxYcomp[_ep[0]] || maxYcomp[_ep[0]] < _ep[1]) {
+                                        maxYcomp[_ep[0]] = _ep[1];
+                                    }
+                                }
                             }
                         }
                     }
-                    if (epX[1] < _ep[1] && _ep[1] <= ep[1] && _ep[0] < itemRight) {
+                    if (epX[1] <= _ep[1] && _ep[1] <= ep[1] && _ep[0] < itemRight) {
                         var compEP = [itemRight, _ep[1]];
-                        if (newEPs[compEP]) {
+                        if (newEPs[compEP] && epX[1] != _ep[1]) {
                             newEPdata[compEP].yCoord.push(ep[1]);
                             newEPdata[compEP].yCoord.push(itemTop);
+
+                            if (!EP[compEP] && (!maxXcomp[_ep[1]] || maxXcomp[_ep[1]] < _ep[0])) {
+                                maxXcomp[_ep[1]] = _ep[0];
+                            }
                         } else {
                             /*let*/var coordOriginList = _data.xCoord;
                             /*let*/var newCoordList = [];
@@ -373,12 +434,18 @@ var AlgState = function(binWidth, binHeight, items) {
                                 }
                             }
                             if (newCoordList.length > 0) {
-                                newEPs[compEP] = compEP;
-                                newEPdata[compEP] = {
-                                    yCoord: [ep[1], itemTop],
-                                    xCoord: newCoordList
-                                };
-                                // TODO update SPACE
+                                if (epX[1] == _ep[1]) {
+                                    newEPdata[compEP].xCoord = newCoordList;
+                                } else {
+                                    newEPs[compEP] = compEP;
+                                    newEPdata[compEP] = {
+                                        yCoord: [ep[1], itemTop],
+                                        xCoord: newCoordList
+                                    };
+                                    if (!maxXcomp[_ep[1]] || maxXcomp[_ep[1]] < _ep[0]) {
+                                        maxXcomp[_ep[1]] = _ep[0];
+                                    }
+                                }
                             }
                         }
                     }
@@ -401,63 +468,118 @@ var AlgState = function(binWidth, binHeight, items) {
             for (/*let*/var y in maxXep) {
                 /*let*/var x = maxXep[y];
                 /*let*/var spaces = SPACE[[x, y]];
+                /*let*/var spaceToUpdate = newSPACE[[itemRight, y]] = (newSPACE[[itemRight, y]] || {});
                 for (/*let*/var space in spaces) {
                     if (intersect([x, y], spaces[space], ep, itemSpaces)) {
                         /*let*/var ok = true;
                         /*let*/var newSpace = [spaces[space][0] - (itemRight - x), spaces[space][1]];
-                        /*let*/var spaceToUpdate = newSPACE[[itemRight, y]] = (newSPACE[[itemRight, y]] || {});
-                        for (/*let*/var space2 in spaceToUpdate) {
-                            if (newSpace[0] <= spaceToUpdate[space2][0] && newSpace[1] <= spaceToUpdate[space2][1]) {
-                                ok = false;
-                            } else if (newSpace[0] >= spaceToUpdate[space2][0] && newSpace[1] >= spaceToUpdate[1]) {
-                                delete spaceToUpdate[space2];
+                        if (newSpace[0] > 0 && newSpace[1] > 0) {
+                            for (/*let*/var space2 in spaceToUpdate) {
+                                /*let*/var _space = spaceToUpdate[space2];
+                                if (newSpace[0] <= _space[0] && newSpace[1] <= _space[1]) {
+                                    ok = false;
+                                } else if (newSpace[0] >= _space[0] && newSpace[1] >= _space[1]) {
+                                    delete spaceToUpdate[space2];
+                                }
+                            }
+                            if (ok) {
+                                spaceToUpdate[newSpace] = newSpace;
                             }
                         }
-                        if (ok) {
-                            spaceToUpdate[newSpace] = newSpace;
-                        }
                     }
+                }
+                if (objectSize(spaceToUpdate) == 0) {
+                    delete newEPs[[itemRight, y]];
+                    delete newEPdata[[itemRight, y]];
+                    delete newSPACE[[itemRight, y]];
                 }
             }
             for (/*let*/var x in maxYep) {
                 /*let*/var y = maxYep[x];
                 /*let*/var spaces = SPACE[[x, y]];
+                /*let*/var spaceToUpdate = newSPACE[[x, itemTop]] = (newSPACE[[x, itemTop]] || {});
                 for (/*let*/var space in spaces) {
                     if (intersect([x, y], spaces[space], ep, itemSpaces)) {
                         /*let*/var ok = true;
                         /*let*/var newSpace = [spaces[space][0], spaces[space][1] - (itemTop - y)];
-                        /*let*/var spaceToUpdate = newSPACE[[x, itemTop]] = (newSPACE[[x, itemTop]] || {});
-                        for (/*let*/var space2 in spaceToUpdate) {
-                            if (newSpace[0] <= spaceToUpdate[space2][0] && newSpace[1] <= spaceToUpdate[space2][1]) {
-                                ok = false;
-                            } else if (newSpace[0] >= spaceToUpdate[space2][0] && newSpace[1] >= spaceToUpdate[1]) {
-                                delete spaceToUpdate[space2];
+                        if (newSpace[0] > 0 && newSpace[1] > 0) {
+                            for (/*let*/var space2 in spaceToUpdate) {
+                                /*let*/var _space = spaceToUpdate[space2];
+                                if (newSpace[0] <= _space[0] && newSpace[1] <= _space[1]) {
+                                    ok = false;
+                                } else if (newSpace[0] >= _space[0] && newSpace[1] >= _space[1]) {
+                                    delete spaceToUpdate[space2];
+                                }
                             }
-                        }
-                        if (ok) {
-                            spaceToUpdate[newSpace] = newSpace;
+                            if (ok) {
+                                spaceToUpdate[newSpace] = newSpace;
+                            }
                         }
                     }
                 }
+                if (objectSize(spaceToUpdate) == 0) {
+                    delete newEPs[[x, itemTop]];
+                    delete newEPdata[[x, itemTop]];
+                    delete newSPACE[[x, itemTop]];
+                }
             }
 
-            //for (/*let*/var i in newSPACE) {
-            //    if (newSPACE[i].length == 0) {
-            //        delete newEP[i];
-            //        delete newEPdata[i];
-            //        delete newSPACE[i];
-            //    }
-            //}
+            for (/*let*/var y in maxXcomp) {
+                y = parseInt(y + "");
+                /*let*/var topY = null;
+                for (/*let*/var _y in rightEdgeY) {
+                    _y = rightEdgeY[_y];
+                    if (_y < y && (topY === null || topY < _y)) {
+                        topY = _y;
+                    }
+                }
+                if (topY === null) {
+                    continue;
+                }
 
-            var _packed = packed.slice();
-            _packed.push({
-                x: ep[0],
-                y: ep[1],
-                width: item.width,
-                height: item.height
-            });
-            renderItems(_packed);
-            renderExtremePoints(newEPs, newSPACE);
+                /*let*/var x = maxXcomp[y];
+                /*let*/var ep1 = EP[[itemRight, topY]];
+                /*let*/var ep2 = EP[[x, y]];
+                /*let*/var compEP = [itemRight, y];
+                mergeSpaces(SPACE, newSPACE, compEP, ep1, ep2);
+            }
+
+            for (/*let*/var x in maxYcomp) {
+                x = parseInt(x + "");
+                /*let*/var topX = null;
+                for (/*let*/var _x in topEdgeX) {
+                    _x = topEdgeX[_x];
+                    if (_x < x && (topX === null || topX < _x)) {
+                        topX = _x;
+                    }
+                }
+                if (topX === null) {
+                    continue;
+                }
+
+                /*let*/var y = maxYcomp[x];
+                /*let*/var ep1 = EP[[topX, itemTop]];
+                /*let*/var ep2 = EP[[x, y]];
+                /*let*/var compEP = [x, itemTop];
+                mergeSpaces(SPACE, newSPACE, compEP, ep1, ep2);
+            }
+
+            for (var space in newSPACE) {
+                if (!newEPs[space]) {
+                    delete newSPACE[space];
+                }
+            }
+
+
+            //var _packed = packed.slice();
+            //_packed.push({
+            //    x: ep[0],
+            //    y: ep[1],
+            //    width: item.width,
+            //    height: item.height
+            //});
+            //renderItems(_packed);
+            //renderExtremePoints(newEPs, newSPACE);
 
             /*let*/var epCount = objectSize(newEPs);
 
@@ -490,9 +612,6 @@ var AlgState = function(binWidth, binHeight, items) {
 
         renderItems(packed);
         renderExtremePoints(EP, SPACE);
-
-        log(EP);
-
     }
 
     function intersect(xy1, wh1, xy2, wh2) {
@@ -516,20 +635,54 @@ var AlgState = function(binWidth, binHeight, items) {
             a_y1 < b_y2 && a_y2 > b_y1;
     }
 
-    function createSpace(w, h, oldSpace, newEP) {
-        if (SPACE[newEP]) {
-            return SPACE[newEP]
-        } else {
-            return [
-                oldSpace[0] - w,
-                oldSpace[1] - h
-            ]
+    function mergeSpaces(SPACE, newSPACE, compEP, ep1, ep2) {
+        var space1 = SPACE[ep1];
+        var space2 = SPACE[ep2];
+
+        var spaceToUpdate = newSPACE[compEP] = (newSPACE[compEP] || {});
+
+        for (var space in space1) {
+            var space = space1[space];
+            var newSpace = [space[0] - (compEP[0] - ep1[0]), space[1] - (compEP[1] - ep1[1])];
+            if (newSpace[0] > 0 && newSpace[1] > 0) {
+                spaceToUpdate[newSpace] = newSpace;
+                for (var _space in spaceToUpdate) {
+                    _space = spaceToUpdate[_space];
+                    if (newSpace[0] <= _space[0] && newSpace[1] <= _space[1]) {
+                        ok = false;
+                    } else if (newSpace[0] >= _space[0] && newSpace[1] >= _space[1]) {
+                        delete spaceToUpdate[_space];
+                    }
+                }
+                if (ok) {
+                    spaceToUpdate[newSpace] = newSpace;
+                }
+            }
+        }
+
+        for (var space in space2) {
+            var space = space2[space];
+            var newSpace = [space[0] - (compEP[0] - ep2[0]), space[1] - (compEP[1] - ep2[1])];
+            if (newSpace[0] > 0 && newSpace[1] > 0) {
+                var ok = true;
+                for (var _space in spaceToUpdate) {
+                    _space = spaceToUpdate[_space];
+                    if (newSpace[0] <= _space[0] && newSpace[1] <= _space[1]) {
+                        ok = false;
+                    } else if (newSpace[0] >= _space[0] && newSpace[1] >= _space[1]) {
+                        delete spaceToUpdate[_space];
+                    }
+                }
+                if (ok) {
+                    spaceToUpdate[newSpace] = newSpace;
+                }
+            }
         }
     }
 
     function renderItems(items) {
         var renderItems = [];
-        for (i in items) {
+        for (var i in items) {
             var renderItem = createRenderItem(items[i]);
             renderItems.push(renderItem);
         }
@@ -539,8 +692,8 @@ var AlgState = function(binWidth, binHeight, items) {
     function renderExtremePoints(eps, spaces) {
         var renderEPs = [];
         var renderSpaces = [];
-        for (i in eps) {
-            for (j in spaces[i]) {
+        for (var i in eps) {
+            for (var j in spaces[i]) {
                 renderSpaces.push({
                     x: eps[i][0],
                     y: eps[i][1],
@@ -576,7 +729,7 @@ self.addEventListener('message', function (e) {
 
         case 'start':
             algState = new AlgState(data.binWidth, data.binHeight, data.items);
-            algState.run();
+            //algState.run();
 
             message.onDone();
 
