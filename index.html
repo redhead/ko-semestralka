@@ -12,6 +12,8 @@
 		<script src="js/methods/functions.js"></script>
 	</head>
     <div class="container">
+        <div style="text-align: center">&copy; Radek Ježdík 2015</div>
+
 		<h1>2D Bin packing extensibility</h1>
 
         <div class="row">
@@ -68,8 +70,16 @@
                     <input id="binHeight" class="form-control" type="number" value="22" min="1">
                 </div>
                 <div class="form-group">
-                    <label for="method">Method: </label>
-                    <select id="method" class="form-control"></select>
+                    <label for="scale">Scale: </label>
+                    <input id="scale" class="form-control" type="number" value="5" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="metric">Metric: </label>
+                    <select id="metric" class="form-control">
+                        <option value="0">Max empty space + EP</option>
+                        <option value="1">Max empty space</option>
+                        <option value="2">EP</option>
+                    </select>
                 </div>
                 <button id="run" class="btn btn-success"><span class="glyphicon glyphicon-triangle-right"></span> Run</button>
             </form>
@@ -81,12 +91,16 @@
 
 
 
+        <div id="consoleContainer">
+            <div class="container">
+                <code>
+                    <pre id="console"></pre>
+                </code>
+            </div>
+        </div>
 
+        <footer></footer>
 
     </div>
-
-	<footer>
-		&copy; Radek Ježdík 2015
-	</footer>
 
 </html>

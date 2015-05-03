@@ -4,7 +4,13 @@
 importScripts('functions.js');
 
 
-var AlgState = function(binWidth, binHeight, items) {
+var AlgState = function(binWidth, binHeight, items, metricType) {
+
+    print("");
+    print("Started!");
+    print("---");
+
+    var startDate = new Date();
 
     items = orderItems(items);
 
@@ -579,13 +585,24 @@ var AlgState = function(binWidth, binHeight, items) {
                 }
             }
 
+            var numberOfEPs = objectSize(newEPs);
             var spaceRatio = biggestEmptySpace / (binWidth * binHeight);
-            var pointsRatio = objectSize(newEPs) / (2 * items.length);
+            var pointsRatio = numberOfEPs / (2 * items.length);
             if (pointsRatio > 1) {
                 pointsRatio = 0.9999999999;
             }
 
-            var feasibility = spaceRatio * (1 - pointsRatio);
+            switch (metricType) {
+                case 0:
+                    var feasibility = spaceRatio * (1 - pointsRatio);
+                    break;
+                case 1:
+                    var feasibility = spaceRatio;
+                    break;
+                case 2:
+                    var feasibility = (1 - pointsRatio);
+                    break;
+            }
 
             //var _packed = packed.slice();
             //_packed.push({
@@ -606,12 +623,18 @@ var AlgState = function(binWidth, binHeight, items) {
                 bestEP.EP = newEPs;
                 bestEP.EPdata = newEPdata;
                 bestEP.SPACE = newSPACE;
+                bestEP.result = {
+                    epCount: numberOfEPs,
+                    maxSpace: biggestEmptySpace,
+                    feasibility: feasibility
+                }
             }
         }
 
         if (bestEP == null) {
             console.log("Could not place item #" + (toInt(i) + 1));
-            continue;
+            print("Could not place item " + (toInt(i) + 1) + " of " + items.length + ". Consider increasing bin size!");
+            return;
         }
 
         packed.push({
@@ -624,22 +647,44 @@ var AlgState = function(binWidth, binHeight, items) {
         EPdata = bestEP.EPdata;
         SPACE = bestEP.SPACE;
 
-        //renderItems(packed);
-        //renderExtremePoints(EP, SPACE);
+        renderItems(packed);
+        renderExtremePoints(EP, {});
     }
 
+    var endDate = new Date();
+    var milis = endDate.getTime() - startDate.getTime();
+    var secs = milis / 1000;
 
-    packed.push({
-        x: bestEP.placingEP[0],
-        y: bestEP.placingEP[1],
-        width: item.width,
-        height: item.height
-    });
-    EP = bestEP.EP;
-    EPdata = bestEP.EPdata;
-    SPACE = bestEP.SPACE;
+    switch (metricType) {
+        case 0:
+            var metricName = "Max empty space + EP";
+            break;
+        case 1:
+            var metricName = "Max empty space";
+            break;
+        case 2:
+            var metricName = "EP";
+            break;
+    }
 
-    renderItems(packed);
+    print("Done!");
+    print("Number of EPs: \t\t" + bestEP.result.epCount);
+    print("Max empty space: \t" + bestEP.result.maxSpace);
+    print("Metric: \t\t" + metricName);
+    print("Feasibility: \t\t" + bestEP.result.feasibility);
+    print("Time: \t\t\t" + (+secs.toFixed(4)));
+
+    //packed.push({
+    //    x: bestEP.placingEP[0],
+    //    y: bestEP.placingEP[1],
+    //    width: item.width,
+    //    height: item.height
+    //});
+    //EP = bestEP.EP;
+    //EPdata = bestEP.EPdata;
+    //SPACE = bestEP.SPACE;
+    //
+    //renderItems(packed);
 
 
     function intersect(xy1, wh1, xy2, wh2) {
@@ -746,6 +791,10 @@ var AlgState = function(binWidth, binHeight, items) {
         }
     }
 
+    function print(msg) {
+        message.print(msg);
+    }
+
 };
 
 
@@ -756,7 +805,7 @@ self.addEventListener('message', function (e) {
     switch (data.cmd) {
 
         case 'start':
-            algState = new AlgState(data.binWidth, data.binHeight, data.items);
+            algState = new AlgState(data.binWidth, data.binHeight, data.items, data.metric);
             //algState.run();
 
             message.onDone();
@@ -797,5 +846,12 @@ message.onDone = function() {
     postMessage({
         cmd: 'onDone',
         args: []
+    });
+};
+
+message.print = function(msg) {
+    postMessage({
+        cmd: 'print',
+        args: [msg]
     });
 };

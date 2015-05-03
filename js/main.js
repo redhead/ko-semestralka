@@ -1,20 +1,9 @@
 
 "use strict";
 
-var items = [
-    {width: 6, height: 8},
-    {width: 9, height: 5},
-    {width: 6, height: 5},
-    //{width: 2, height: 3}
-    {width: 3, height: 3}
-];
 
+var items;
 var SCALE = 5; // one unit = 20 pixels
-
-var methods = [
-    {name: "Extreme Point based", script: "ep-based.js"},
-    {name: "Permuted", script: "permute.js"}
-];
 
 
 function random(min, max) {
@@ -55,9 +44,9 @@ function renderPoints(context, points, spaces) {
     for (var i in points) {
         renderPoint(context, points[i]);
     }
-    for (var i in points) {
-        renderSpace(context, spaces[i]);
-    }
+    //for (var i in points) {
+    //    renderSpace(context, spaces[i]);
+    //}
 }
 
 function renderPoint(context, point) {
@@ -141,14 +130,16 @@ function renderUI() {
 function run(e) {
     if (e) e.preventDefault();
 
+    SCALE = parseInt($('#scale').val());
+
     log(items);
 
     $('#solution').html('');
 
     var methodIdx = $('#method').val();
-    var method = methods[methodIdx];
+    //var method = methods[methodIdx];
 
-    log("Executing method " + method.name);
+    //log("Executing method " + method.name);
 
     var binWidth = parseInt($('#binWidth').val());
     var binHeight = parseInt($('#binHeight').val());
@@ -185,6 +176,11 @@ function run(e) {
 
             $('#run').attr('disabled', false);
             stopButton.remove();
+        },
+
+        print: function(msg) {
+            $('#console').append(msg.replace(/\n/g, "<br>") + "<br>");
+            $('#consoleContainer code').scrollTop($('#consoleContainer code')[0].scrollHeight);
         }
     };
 
@@ -202,12 +198,13 @@ function run(e) {
     };
     render();
 
-    var worker = new Worker("js/methods/" + method.script);
+    var worker = new Worker("js/methods/ep-based.js");
     worker.postMessage({
         cmd: 'start',
         binWidth: binWidth,
         binHeight: binHeight,
-        items: items
+        items: items,
+        metric: toInt($('#metric').val())
     });
     worker.onmessage = function (e) {
         commands[e.data.cmd].apply(this, e.data.args);
@@ -242,17 +239,17 @@ function randomize(e) {
     renderUI();
 }
 
-function initMethodsSelect() {
-    var methodSelect = $('#method');
-
-    for (var i = 0; i < methods.length; i++) {
-        var option = $('<option>')
-            .val(i)
-            .html(methods[i].name);
-
-        methodSelect.append(option);
-    }
-}
+//function initMethodsSelect() {
+//    var methodSelect = $('#method');
+//
+//    for (var i = 0; i < methods.length; i++) {
+//        var option = $('<option>')
+//            .val(i)
+//            .html(methods[i].name);
+//
+//        methodSelect.append(option);
+//    }
+//}
 
 $(function () {
 
@@ -261,9 +258,9 @@ $(function () {
 
     $('#run').click(run);
 
-    initMethodsSelect();
+    //initMethodsSelect();
 
-    //randomize();
+    randomize();
     renderUI();
 
 });
