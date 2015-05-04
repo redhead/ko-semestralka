@@ -6,8 +6,32 @@ var items;
 var SCALE = 5; // one unit = 20 pixels
 
 
-function random(min, max) {
-    return Math.floor((Math.random() * (max - min + 1)) + min);
+var distributionFunctions = {
+    0: function() {
+        return Math.random();
+    },
+    1: function() {
+        var n = jStat.normal.sample(0, 1);
+        if (n > 5) {
+            n = 5;
+        }
+        if (n < -5) {
+            n = -5;
+        }
+        n += 5;
+        n /= 10;
+        return n;
+    },
+    2: function() {
+        return 1 - distributionFunctions[3]();
+    },
+    3: function beta() {
+        return jStat.beta.sample(5, 1);
+    }
+};
+
+function random(min, max, randomFn) {
+    return Math.floor((randomFn() * (max - min + 1)) + min);
 }
 
 function createItems() {
@@ -15,11 +39,14 @@ function createItems() {
     var minSize = parseInt($('#itemMinSize').val());
     var maxSize = parseInt($('#itemMaxSize').val());
 
+    var distributionIdx = parseInt($('#distribution').val());
+    var randomFn = distributionFunctions[distributionIdx];
+
     var items = [];
     for (var i = 0; i < itemCount; i++) {
         items[i] = {
-            width: random(minSize, maxSize),
-            height: random(minSize, maxSize)
+            width: random(minSize, maxSize, randomFn),
+            height: random(minSize, maxSize, randomFn)
         };
     }
     return items;
@@ -87,12 +114,15 @@ function renderItem(context, item) {
 }
 
 function renderItemPreviews() {
-    var el = $('#itemsPreview');
+    SCALE = parseFloat($('#scale').val());
 
+    var el = $('#itemsPreview');
     el.html('');
 
     var maxHeight = 0;
     var maxWidth = 0;
+
+    items = orderItems(items);
 
     $.each(items, function (i, item) {
         var width = item.width * SCALE;
@@ -114,7 +144,7 @@ function renderItemPreviews() {
 
         itemEl.click(function () {
             items.splice(i, 1);
-            renderItemPreviews();
+            itemEl.remove();
         });
     });
 
@@ -130,7 +160,7 @@ function renderUI() {
 function run(e) {
     if (e) e.preventDefault();
 
-    SCALE = parseInt($('#scale').val());
+    SCALE = parseFloat($('#scale').val());
 
     log(items);
 
@@ -175,7 +205,7 @@ function run(e) {
             worker = undefined;
 
             $('#run').attr('disabled', false);
-            stopButton.remove();
+            $('#stop').attr('disabled', true);
         },
 
         print: function(msg) {
@@ -204,7 +234,8 @@ function run(e) {
         binWidth: binWidth,
         binHeight: binHeight,
         items: items,
-        metric: toInt($('#metric').val())
+        metric: toInt($('#metric').val()),
+        renderProgress: $('#render').is(':checked')
     });
     worker.onmessage = function (e) {
         commands[e.data.cmd].apply(this, e.data.args);
@@ -212,11 +243,10 @@ function run(e) {
 
 
     $('#run').attr('disabled', true);
-
-    var stopButton = $('<button class="btn">')
-        .text('Stop')
-        .insertAfter($('#run'))
-        .click(commands.onDone);
+    $('#stop')
+        .unbind()
+        .attr('disabled', false)
+        .on('click', commands.onDone);
 }
 
 function addItem(e) {
@@ -255,8 +285,10 @@ $(function () {
 
     $('#addItemButton').click(addItem);
     $('#randomizeButton').click(randomize);
+    $('#scale').change(renderUI);
 
     $('#run').click(run);
+    $('#stop').attr('disabled', true);
 
     //initMethodsSelect();
 

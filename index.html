@@ -9,31 +9,17 @@
 
 		<script src="js/jquery.js"></script>
 		<script src="js/main.js"></script>
-		<script src="js/methods/functions.js"></script>
+        <script src="js/jstat.min.js"></script>
+        <script src="js/methods/functions.js"></script>
 	</head>
     <div class="container">
         <div style="text-align: center">&copy; Radek Ježdík 2015</div>
 
 		<h1>2D Bin packing extensibility</h1>
 
+
         <div class="row">
-            <div class="col-md-4">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <label for="itemWidth">Width: </label>
-                        <input id="itemWidth" class="form-control" type="number" value="5" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="itemHeight">Height: </label>
-                        <input id="itemHeight" class="form-control " type="number" value="5" min="1">
-                    </div>
-                    <button id="addItemButton" class="btn">Add item</button>
-                </form>
-            </div>
-            <div class="orSeparator col-md-1">
-                or
-            </div>
-            <div class="col-md-7">
+            <div class="col-md-12">
                 <form class="form-inline">
                     <div class="form-group">
                         <label for="itemMinSize">Min size: </label>
@@ -45,9 +31,34 @@
                     </div>
                     <div class="form-group">
                         <label for="itemCount">Count: </label>
-                        <input id="itemCount" class="form-control " type="number" value="5" min="1">
+                        <input id="itemCount" class="form-control" type="number" value="5" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="distribution">Distribution: </label>
+                        <select id="distribution" class="form-control">
+                            <option value="0">Uniform</option>
+                            <option value="1">Normal</option>
+                            <option value="2">Skewed to smaller</option>
+                            <option value="3">Skewed to bigger</option>
+                        </select>
                     </div>
                     <button id="randomizeButton" class="btn">Randomize</button>
+                </form>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="itemWidth">Width: </label>
+                        <input id="itemWidth" class="form-control" type="number" value="5" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="itemHeight">Height: </label>
+                        <input id="itemHeight" class="form-control" type="number" value="5" min="1">
+                    </div>
+                    <button id="addItemButton" class="btn">Add item</button>
                 </form>
             </div>
         </div>
@@ -71,17 +82,19 @@
                 </div>
                 <div class="form-group">
                     <label for="scale">Scale: </label>
-                    <input id="scale" class="form-control" type="number" value="5" min="1">
+                    <input id="scale" class="form-control" type="number" value="5" min="0">
                 </div>
                 <div class="form-group">
                     <label for="metric">Metric: </label>
                     <select id="metric" class="form-control">
-                        <option value="0">Max empty space + EP</option>
-                        <option value="1">Max empty space</option>
-                        <option value="2">EP</option>
+                        <option value="0">Combined</option>
+                        <option value="1">Space-based</option>
+                        <option value="2">EP-based</option>
                     </select>
                 </div>
                 <button id="run" class="btn btn-success"><span class="glyphicon glyphicon-triangle-right"></span> Run</button>
+                <button id="stop" class="btn btn-warning">Stop</button>
+                <label><input type="checkbox" id="render" /> Render progress</label>
             </form>
         </div>
 

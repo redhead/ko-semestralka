@@ -4,7 +4,7 @@
 importScripts('functions.js');
 
 
-var AlgState = function(binWidth, binHeight, items, metricType) {
+var AlgState = function(binWidth, binHeight, items, metricType, renderProgress) {
 
     print("");
     print("Started!");
@@ -31,7 +31,7 @@ var AlgState = function(binWidth, binHeight, items, metricType) {
 
         var bestEP = null;
 
-        console.log("placing item #" + (parseInt(i) + 1));
+        //console.log("placing item #" + (parseInt(i) + 1));
 
         for (var j in EP) {
             var ep = EP[j];
@@ -632,7 +632,7 @@ var AlgState = function(binWidth, binHeight, items, metricType) {
         }
 
         if (bestEP == null) {
-            console.log("Could not place item #" + (toInt(i) + 1));
+            //console.log("Could not place item #" + (toInt(i) + 1));
             print("Could not place item " + (toInt(i) + 1) + " of " + items.length + ". Consider increasing bin size!");
             return;
         }
@@ -647,8 +647,10 @@ var AlgState = function(binWidth, binHeight, items, metricType) {
         EPdata = bestEP.EPdata;
         SPACE = bestEP.SPACE;
 
-        renderItems(packed);
-        renderExtremePoints(EP, {});
+        if (renderProgress) {
+            renderItems(packed);
+            renderExtremePoints(EP, {});
+        }
     }
 
     var endDate = new Date();
@@ -657,13 +659,13 @@ var AlgState = function(binWidth, binHeight, items, metricType) {
 
     switch (metricType) {
         case 0:
-            var metricName = "Max empty space + EP";
+            var metricName = "combined";
             break;
         case 1:
-            var metricName = "Max empty space";
+            var metricName = "space-based";
             break;
         case 2:
-            var metricName = "EP";
+            var metricName = "EP-based";
             break;
     }
 
@@ -674,17 +676,9 @@ var AlgState = function(binWidth, binHeight, items, metricType) {
     print("Feasibility: \t\t" + bestEP.result.feasibility);
     print("Time: \t\t\t" + (+secs.toFixed(4)));
 
-    //packed.push({
-    //    x: bestEP.placingEP[0],
-    //    y: bestEP.placingEP[1],
-    //    width: item.width,
-    //    height: item.height
-    //});
-    //EP = bestEP.EP;
-    //EPdata = bestEP.EPdata;
-    //SPACE = bestEP.SPACE;
-    //
-    //renderItems(packed);
+
+    renderItems(packed);
+    renderExtremePoints(EP, {});
 
 
     function intersect(xy1, wh1, xy2, wh2) {
@@ -805,7 +799,7 @@ self.addEventListener('message', function (e) {
     switch (data.cmd) {
 
         case 'start':
-            algState = new AlgState(data.binWidth, data.binHeight, data.items, data.metric);
+            algState = new AlgState(data.binWidth, data.binHeight, data.items, data.metric, data.renderProgress);
             //algState.run();
 
             message.onDone();
